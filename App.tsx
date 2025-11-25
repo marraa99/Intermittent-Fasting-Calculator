@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { AppState, UnitSystem, Gender, ActivityLevel } from './types';
+
+import React, { useState, useEffect } from 'react';
+import { AppState, UnitSystem, Gender, ActivityLevel, TrackerProfile, DEFAULT_TRACKER_PROFILE } from './types';
 import { Disclaimer } from './components/Tabs/Disclaimer';
 import { BasicInfo } from './components/Tabs/BasicInfo';
 import { MacroCalculator } from './components/Tabs/MacroCalculator';
 import { Goals } from './components/Tabs/Goals';
+import { Tracker } from './components/Tabs/Tracker';
 
 const App: React.FC = () => {
   // Initial State
   const [activeTab, setActiveTab] = useState(1);
+  
+  // Calculator State
   const [appState, setAppState] = useState<AppState>({
     unitSystem: UnitSystem.IMPERIAL,
     gender: Gender.MALE,
@@ -33,8 +37,28 @@ const App: React.FC = () => {
     workoutFatSplitPercent: 25, // Lower fat (Higher carb) on workout days
   });
 
+  // Tracker State (Lifted)
+  const [trackerProfile, setTrackerProfile] = useState<TrackerProfile>(DEFAULT_TRACKER_PROFILE);
+
+  // Load Tracker Profile on Mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('if-tracker-profile');
+    if (savedProfile) {
+      setTrackerProfile(JSON.parse(savedProfile));
+    }
+  }, []);
+
+  // Save Tracker Profile on Change
+  useEffect(() => {
+    localStorage.setItem('if-tracker-profile', JSON.stringify(trackerProfile));
+  }, [trackerProfile]);
+
   const updateState = (updates: Partial<AppState>) => {
     setAppState(prev => ({ ...prev, ...updates }));
+  };
+
+  const updateTrackerProfile = (updates: Partial<TrackerProfile>) => {
+    setTrackerProfile(prev => ({ ...prev, ...updates }));
   };
 
   const tabs = [
@@ -42,6 +66,7 @@ const App: React.FC = () => {
     { id: 1, label: 'Basic Info' },
     { id: 2, label: 'Macro Calculator' },
     { id: 3, label: 'Goals' },
+    { id: 4, label: 'Tracker' },
   ];
 
   return (
@@ -82,8 +107,21 @@ const App: React.FC = () => {
         <div className="animate-fade-in-up">
           {activeTab === 0 && <Disclaimer />}
           {activeTab === 1 && <BasicInfo state={appState} updateState={updateState} />}
-          {activeTab === 2 && <MacroCalculator state={appState} updateState={updateState} />}
+          {activeTab === 2 && (
+            <MacroCalculator 
+              state={appState} 
+              updateState={updateState} 
+              setTrackerProfile={setTrackerProfile}
+              goToTracker={() => setActiveTab(4)}
+            />
+          )}
           {activeTab === 3 && <Goals state={appState} />}
+          {activeTab === 4 && (
+            <Tracker 
+              profile={trackerProfile} 
+              setProfile={updateTrackerProfile} 
+            />
+          )}
         </div>
       </main>
 

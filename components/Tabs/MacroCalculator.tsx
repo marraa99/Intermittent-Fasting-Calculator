@@ -1,5 +1,6 @@
+
 import React, { useMemo } from 'react';
-import { AppState, CONSTANTS, UnitSystem } from '../../types';
+import { AppState, CONSTANTS, UnitSystem, TrackerProfile } from '../../types';
 import { getMetricValues, calculateBMR, calculateMacroDetails, formatNumber } from '../../utils/calculations';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
@@ -8,9 +9,11 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 interface Props {
   state: AppState;
   updateState: (updates: Partial<AppState>) => void;
+  setTrackerProfile: React.Dispatch<React.SetStateAction<TrackerProfile>>;
+  goToTracker: () => void;
 }
 
-export const MacroCalculator: React.FC<Props> = ({ state, updateState }) => {
+export const MacroCalculator: React.FC<Props> = ({ state, updateState, setTrackerProfile, goToTracker }) => {
 
   const data = useMemo(() => {
     // 1. Recalculate TDEE (Need a centralized way or prop, but easy to re-compute)
@@ -61,8 +64,24 @@ export const MacroCalculator: React.FC<Props> = ({ state, updateState }) => {
     { name: 'Fat', value: macros.fat.cals },
   ];
 
+  const handleSync = (macros: typeof data.rest) => {
+    setTrackerProfile(prev => ({
+      ...prev,
+      targets: {
+        ...prev.targets,
+        calories: Math.round(macros.calories),
+        protein: Math.round(macros.protein.grams),
+        carbs: Math.round(macros.carbs.grams),
+        fat: Math.round(macros.fat.grams),
+        // Keep existing fiber/net carbs or set intelligent defaults
+        // For net carbs, we can default to total carbs - fiber, or keep keto setting
+      }
+    }));
+    goToTracker();
+  };
+
   const renderMacroCard = (title: string, macros: typeof data.rest, isRest: boolean) => (
-    <Card title={title} color={isRest ? 'secondary' : 'primary'} className="h-full">
+    <Card title={title} color={isRest ? 'secondary' : 'primary'} className="h-full flex flex-col">
       <div className="flex flex-col h-full">
         <div className="flex justify-between items-center mb-4">
            <span className="text-sm font-medium text-slate-500">Total Calories</span>
@@ -92,7 +111,7 @@ export const MacroCalculator: React.FC<Props> = ({ state, updateState }) => {
            </ResponsiveContainer>
         </div>
 
-        <div className="space-y-2 text-sm mt-auto">
+        <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center p-2 bg-emerald-50 rounded text-emerald-900">
              <span>Protein ({formatNumber((macros.protein.cals/macros.calories)*100)}%)</span>
              <span className="font-bold">{formatNumber(macros.protein.grams)}g</span>
@@ -105,6 +124,15 @@ export const MacroCalculator: React.FC<Props> = ({ state, updateState }) => {
              <span>Fat ({formatNumber((macros.fat.cals/macros.calories)*100)}%)</span>
              <span className="font-bold">{formatNumber(macros.fat.grams)}g</span>
           </div>
+        </div>
+
+        <div className="mt-auto pt-4">
+          <button 
+            onClick={() => handleSync(macros)}
+            className={`w-full py-2 rounded-lg font-medium text-white shadow transition-transform hover:scale-[1.02] active:scale-95 ${isRest ? 'bg-secondary hover:bg-purple-600' : 'bg-primary hover:bg-indigo-600'}`}
+          >
+            Use as Today's Target
+          </button>
         </div>
       </div>
     </Card>

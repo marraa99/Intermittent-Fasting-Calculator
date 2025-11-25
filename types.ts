@@ -1,3 +1,4 @@
+
 export enum UnitSystem {
   IMPERIAL = 'Imperial',
   METRIC = 'Metric',
@@ -46,6 +47,48 @@ export interface AppState {
   workoutFatSplitPercent: number; 
 }
 
+// --- Tracker Interfaces ---
+
+export interface TrackerTarget {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  netCarbs: number; // For keto mode
+}
+
+export interface TrackerProfile {
+  apiKey: string;
+  model: string;
+  targets: TrackerTarget;
+  isKetoMode: boolean;
+}
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  grams: number; // Amount eaten
+  // Per 100g reference values
+  per100g: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
+}
+
+export interface DailyLog {
+  date: string; // YYYY-MM-DD
+  foods: FoodItem[];
+}
+
 export const CONSTANTS = {
   CALORIES_PER_GRAM_PROTEIN: 4,
   CALORIES_PER_GRAM_CARB: 4,
@@ -54,4 +97,18 @@ export const CONSTANTS = {
   IN_TO_CM: 2.54,
   CALORIES_PER_KG_FAT: 7700,
   CALORIES_PER_LB_FAT: 3500,
+};
+
+export const DEFAULT_TRACKER_PROFILE: TrackerProfile = {
+  apiKey: '',
+  model: 'gemini-2.5-flash',
+  isKetoMode: false,
+  targets: {
+    calories: 2000,
+    protein: 150,
+    carbs: 200,
+    fat: 65,
+    fiber: 30,
+    netCarbs: 50,
+  }
 };
